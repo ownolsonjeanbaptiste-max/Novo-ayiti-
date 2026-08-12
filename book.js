@@ -312,6 +312,10 @@ function renderChapter(id) {
           <a class="text-link" href="#route-chapit">← Tounen nan tab matyè a</a>
           <span class="chapter-progress">${i + 1} / ${CHAPTERS.length}</span>
         </div>
+        <section class="chapter-actions" aria-label="Aksyon pou lektè yo">
+          <div class="download-panel"><strong>Telechaje liv la</strong><p>Vèsyon PDF la ap disponib byento.</p><span>Disponib byento</span></div>
+          <form class="comment-panel" data-comment-form><label for="comment-${esc(c.id)}">Kite yon kòmantè</label><textarea id="comment-${esc(c.id)}" rows="3" placeholder="Pataje refleksyon ou sou chapit sa a…" required></textarea><button class="btn btn-outline" type="submit">Voye kòmantè a</button><small data-comment-message aria-live="polite"></small></form>
+        </section>
       </article>
     </div>`;
   const audio = mount.querySelector("#speakChapter");
@@ -324,6 +328,7 @@ function renderChapter(id) {
     utterance = new SpeechSynthesisUtterance(text); utterance.lang = "ht-HT"; utterance.rate = Number(mount.querySelector("#speechRate").value); utterance.onend = () => { audio.textContent = "Koute Chapit la"; }; speechSynthesis.speak(utterance); audio.textContent = "Poz";
   });
   mount.querySelector("#speechRate")?.addEventListener("change", (e) => { if (utterance) utterance.rate = Number(e.target.value); });
+  mount.querySelector("[data-comment-form]")?.addEventListener("submit", (event) => { event.preventDefault(); const message = mount.querySelector("[data-comment-message]"); message.textContent = "Mèsi. Kòmantè ou pare pou revizyon."; event.currentTarget.reset(); });
   const bookmark = mount.querySelector("#bookmarkChapter"); const key = `novo-ayiti-bookmark-${c.id}`;
   if (sessionStorage.getItem(key) === "1") bookmark.textContent = "Chapita sove";
   bookmark?.addEventListener("click", () => { const saved = sessionStorage.getItem(key) !== "1"; sessionStorage.setItem(key, saved ? "1" : "0"); bookmark.textContent = saved ? "Chapita sove" : "Sove chapit la"; });
