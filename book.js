@@ -313,7 +313,7 @@ function renderChapter(id) {
           <span class="chapter-badge">Chapit ${esc(c.num)}</span>
           <h1>${esc(c.title)}</h1>
           <p class="chapter-summary">${esc(c.summary)}</p>
-          <div class="chapter-tools"><button class="btn btn-outline" id="speakChapter" type="button" aria-controls="chapterAudioPlayer" aria-expanded="false">Koute chapit la</button><button class="btn btn-ghost" id="bookmarkChapter" type="button">Sove chapit la</button></div>
+          <div class="chapter-tools"><button class="btn btn-outline" id="speakChapter" type="button" aria-controls="chapterAudioPlayer" aria-expanded="false">Koute chapit la</button><button class="btn btn-ghost" id="bookmarkChapter" type="button">Sove chapit la</button><button class="btn btn-ghost" id="shareChapter" type="button" aria-label="Pataje chapit sa a">Pataje</button><small id="shareStatus" aria-live="polite"></small></div>
         </header>
         <div class="chapter-body">
           ${renderBody(c.body)}
@@ -329,6 +329,16 @@ function renderChapter(id) {
         </section>
       </article>
     </div>`;
+  const shareButton = mount.querySelector("#shareChapter");
+  const shareStatus = mount.querySelector("#shareStatus");
+  shareButton?.addEventListener("click", async () => {
+    const shareData = { title: `Chapit ${c.num}: ${c.title} — Novo Ayiti`, text: c.summary || c.title, url: window.location.href };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(window.location.href); shareStatus.textContent = "Lyen an kopye."; }
+      else { const input = document.createElement("input"); input.value = window.location.href; document.body.appendChild(input); input.select(); document.execCommand("copy"); input.remove(); shareStatus.textContent = "Lyen an kopye."; }
+    } catch (error) { if (error?.name !== "AbortError") shareStatus.textContent = "Pataje a pa disponib sou aparèy sa a."; }
+  });
   const audioTrigger = mount.querySelector("#speakChapter");
   const chapterBlocks = [...mount.querySelectorAll(".chapter-body h2, .chapter-body h3, .chapter-body p, .chapter-body li")]
     .map((element) => element.textContent.replace(/[•▪◦→←]/g, " ").replace(/\s+/g, " ").trim())
