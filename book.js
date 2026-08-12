@@ -63,16 +63,42 @@ window.addEventListener(
 const esc = (s = "") =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// Body may contain intentional inline HTML (<strong>, <ul>...), so we
-// only strip HTML comments and split into paragraphs on blank lines.
+// Preserve imported HTML structure. KPI blocks are rendered as tables rather
+// than being flattened into ordinary paragraphs.
+function renderKpiTable(blocks) {
+  const text = blocks.map((p) => p.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()).join(" ");
+  const heading = "Endikatè Pèfòmans (KPI)";
+  const content = text.replace(/^.*?KPI/i, "").trim();
+  const targets = /(100%|Pi wo pase 99%|Ogmante|Diminye|Swiv epi rapòte|Swiv|Pi wo)/gi;
+  const rows = [];
+  let last = 0;
+  let match;
+  while ((match = targets.exec(content))) {
+    const indicator = content.slice(last, match.index).trim();
+    if (indicator) rows.push(`<tr><th scope="row">${esc(indicator)}</th><td>${esc(match[0])}</td></tr>`);
+    last = targets.lastIndex;
+  }
+  const remainder = content.slice(last).trim();
+  if (remainder) rows.push(`<tr><th scope="row">${esc(remainder)}</th><td></td></tr>`);
+  if (!rows.length) rows.push(`<tr><td colspan="2">${esc(content)}</td></tr>`);
+  return `<div class="book-table-wrap"><table class="book-table"><caption>${esc(heading)}</caption><thead><tr><th>Endikatè</th><th>Objektif</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+}
+
 function renderBody(body = "") {
-  return body
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
-    .join("");
+  const cleanBody = body.replace(/<!--[\s\S]*?-->/g, "");
+  const paragraphs = [...cleanBody.matchAll(/<(p|ul|ol|h[1-6])\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => m[0].trim());
+  const output = [];
+  for (let i = 0; i < paragraphs.length; i += 1) {
+    const plain = paragraphs[i].replace(/<[^>]+>/g, " ");
+    if (/Endikatè Pèfòmans.*KPI|ENDIKATÈ PÈFÒMANS.*KPI/i.test(plain)) {
+      const block = [paragraphs[i]];
+      while (i + 1 < paragraphs.length && !/<h[1-6]|^<p>(?:PLAN|Plan Aplikasyon|SEKSYON|ANALIZ|ETID KA|PWOPÒZISYON|REFERANS)/i.test(paragraphs[i + 1])) block.push(paragraphs[++i]);
+      output.push(renderKpiTable(block));
+    } else {
+      output.push(paragraphs[i].startsWith("<") ? paragraphs[i] : `<p>${paragraphs[i].replace(/\n/g, "<br>")}</p>`);
+    }
+  }
+  return output.join("");
 }
 
 function indexOfChapter(id) {
