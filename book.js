@@ -18,7 +18,7 @@
    #route-kontak            -> Contact
    ============================================================ */
 
-import { CHAPTERS, FRONTMATTER, BACKMATTER, ANNEXES, BIBLIOGRAPHY, GLOSSARY, BOOK_TITLE, BOOK_SUBTITLE } from "/book-data.js";
+import { CHAPTERS, FRONTMATTER, BACKMATTER, ANNEXES, BIBLIOGRAPHY as BOOK_BIBLIOGRAPHY, GLOSSARY as BOOK_GLOSSARY, BOOK_TITLE, BOOK_SUBTITLE } from "/book-data.js";
 import {
   BOOK_PAGE,
   INFOGRAPHICS,
