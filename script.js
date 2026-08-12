@@ -292,6 +292,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Make existing homepage cards fully clickable without changing their design.
+  document.querySelectorAll(".pillar-card").forEach((card) => {
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("role", "link");
+    const title = card.querySelector("h3")?.textContent?.toLowerCase() || "";
+    const map = [["jistis", "jistis"], ["sekirite", "sekirite"], ["gouvènans", "gouvènans"], ["ekonomi", "ekonomi"], ["agrikilti", "agrikilti"], ["edikasyon", "edikasyon"], ["sante", "sante"], ["enfrastrikti", "enfrastrikti"], ["dijital", "dijital"], ["anviwònman", "anviwonman"]];
+    const target = map.find(([label]) => title.includes(label))?.[1] || "";
+    const go = () => { location.hash = target ? `#route-pilye-${target}` : "#route-pilye"; };
+    card.addEventListener("click", (e) => { if (!e.target.closest("a")) go(); });
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  });
+  document.querySelectorAll(".chapter-item").forEach((card) => {
+    const link = card.querySelector("a[href^=\"#route-chapit-\"]");
+    if (!link) return;
+    card.setAttribute("tabindex", "0");
+    card.addEventListener("click", (e) => { if (!e.target.closest("a")) location.hash = link.getAttribute("href"); });
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); location.hash = link.getAttribute("href"); } });
+  });
+
   // Scroll reveal
   const revealTargets = document.querySelectorAll(
     ".hero-copy, .hero-card-wrap, .two-col > div, .section-head, .pillar-card, .chapter-item, .author-visual, .author-copy, .newsletter-box"

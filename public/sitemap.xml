@@ -5,4 +5,12 @@
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-chapit</loc><priority>0.9</priority></url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-pilye</loc><priority>0.8</priority></url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-vizyon-nasyonal</loc><priority>0.8</priority></url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-ote</loc><priority>0.7</priority></url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-bibliyografi</loc><priority>0.6</priority></url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-glose</loc><priority>0.6</priority></url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-endeks</loc><priority>0.7</priority></url>
+  <url><loc>https://nouvo-ayiti.xyz/#route-asistan-ai</loc><priority>0.7</priority></url>
 </urlset>

@@ -276,6 +276,7 @@ function renderChapter(id) {
           <span class="chapter-badge">Chapit ${esc(c.num)}</span>
           <h1>${esc(c.title)}</h1>
           <p class="chapter-summary">${esc(c.summary)}</p>
+          <div class="chapter-tools"><button class="btn btn-outline" id="speakChapter" type="button">Koute Chapit la</button><button class="btn btn-ghost" id="bookmarkChapter" type="button">Sove chapit la</button><label>Vitès <select id="speechRate"><option value="0.8">0.8×</option><option value="1" selected>1×</option><option value="1.2">1.2×</option></select></label></div>
         </header>
         <div class="chapter-body">
           ${renderBody(c.body)}
@@ -287,6 +288,19 @@ function renderChapter(id) {
         </div>
       </article>
     </div>`;
+  const audio = mount.querySelector("#speakChapter");
+  const text = [...mount.querySelectorAll(".chapter-body p")].map((p) => p.textContent).join("\\n\\n");
+  let utterance;
+  audio?.addEventListener("click", () => {
+    if (!("speechSynthesis" in window)) { audio.textContent = "Odyo pa disponib"; return; }
+    if (speechSynthesis.speaking && !speechSynthesis.paused) { speechSynthesis.pause(); audio.textContent = "Kontinye"; return; }
+    if (speechSynthesis.paused) { speechSynthesis.resume(); audio.textContent = "Poz"; return; }
+    utterance = new SpeechSynthesisUtterance(text); utterance.lang = "ht-HT"; utterance.rate = Number(mount.querySelector("#speechRate").value); utterance.onend = () => { audio.textContent = "Koute Chapit la"; }; speechSynthesis.speak(utterance); audio.textContent = "Poz";
+  });
+  mount.querySelector("#speechRate")?.addEventListener("change", (e) => { if (utterance) utterance.rate = Number(e.target.value); });
+  const bookmark = mount.querySelector("#bookmarkChapter"); const key = `novo-ayiti-bookmark-${c.id}`;
+  if (sessionStorage.getItem(key) === "1") bookmark.textContent = "Chapita sove";
+  bookmark?.addEventListener("click", () => { const saved = sessionStorage.getItem(key) !== "1"; sessionStorage.setItem(key, saved ? "1" : "0"); bookmark.textContent = saved ? "Chapita sove" : "Sove chapit la"; });
 }
 
 /* ---------- Generic document page (front matter + annexes) ----------
@@ -619,6 +633,17 @@ function renderContact() {
   });
 }
 
+const PILLARS = [["jistis","Jistis","Tribinal modèn, aksè ak dwa sitwayen yo.",["jistis","tribinal"]],["sekirite","Sekirite","Polis pwofesyonèl ak pwoteksyon kominote yo.",["sekirite","polis"]],["gouvènans","Bon gouvènans","Enstitisyon solid, transparans ak responsabilite.",["gouvènans","koripsyon"]],["ekonomi","Ekonomi","Travay, antreprenarya ak pwodiksyon nasyonal.",["ekonomi","travay"]],["edikasyon","Edikasyon","Fòmasyon teknik, kalite ak rechèch.",["edikasyon","lekòl"]],["sante","Sante","Swen aksesib ak prevansyon.",["sante","sante"]],["enfrastrikti","Enfrastrikti","Wout, dlo, kouran ak transpò.",["wout","dlo","kouran"]],["agrikilti","Agrikilti","Irigasyon, pwodiksyon lokal ak manje.",["agrikilti","irigasyon"]],["anviwonman","Anviwònman","Rebwazman, dlo ak rezilyans klimatik.",["anviwònman","klima"]],["dijital","Dijitalizasyon ak inovasyon","Pòtal Leta ak sèvis piblik sou entènèt.",["dijital","DGI","ONI"]]];
+function related(terms){return CHAPTERS.filter(c=>terms.some(t=>`${c.title} ${c.summary} ${c.body}`.toLowerCase().includes(t.toLowerCase())))}
+function renderPillars(){mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"10 Pilye"}])}${pageHead("Vizyon nasyonal","10 Pilye Vizyon Nouvo Ayiti","Dis domèn estratejik ki konekte nan yon sèl vizyon.")}<div class="cards-grid">${PILLARS.map(p=>`<article class="pillar-card"><h2>${esc(p[1])}</h2><p>${esc(p[2])}</p><a class="btn btn-outline" href="#route-pilye-${p[0]}">Eksplore Pilye a</a></article>`).join("")}</div></div>`}
+function renderPillar(id){const p=PILLARS.find(x=>x[0]===id);if(!p)return renderNotFound();const rows=related(p[3]);mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"10 Pilye",href:"#route-pilye"},{label:p[1]}])}${pageHead("Pilye estratejik",p[1],p[2])}<h2 class="page-subtitle">Chapit ki gen rapò</h2><ul class="toc-list">${rows.map(c=>`<li class="toc-item"><a href="#route-chapit-${c.id}"><span class="toc-num">${esc(c.num)}</span><span class="toc-text"><strong>${esc(c.title)}</strong><small>${esc(c.summary)}</small></span></a></li>`).join("")}</ul></div>`}
+function renderVision(){mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Vizyon nasyonal"}])}${pageHead("Yon sèl direksyon","Vizyon Nasyonal Nouvo Ayiti","Yon plan reflechi pou chanje fason peyi a fonksyone.")}<section class="page-section"><h2 class="page-subtitle">Objektif liv la</h2><p class="lead">${esc(BOOK_PAGE.paragraphs[0])}</p></section><section class="page-section"><h2 class="page-subtitle">Prensip fondamantal</h2><p class="lead">Transparans, responsabilite piblik, meritokrasi, respè lalwa ak patisipasyon sitwayen yo.</p></section><a class="btn btn-primary" href="#route-pilye">Eksplore 10 pilye yo</a></div>`}
+function renderIndexPage(){const terms=["Agrikilti","Edikasyon","Jistis","Sekirite","Ekonomi","DGI","ONI","BRH","PNH","DINEPA","EDH"];mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Endèks"}])}${pageHead("Rechèch tematik","Endèks entèaktif","Chwazi yon tèm pou wè chapit ki gen rapò.")}<ul class="toc-list">${terms.map(t=>`<li class="toc-item"><a href="#route-search-${encodeURIComponent(t)}"><span class="toc-text"><strong>${t}</strong></span><span class="toc-go">→</span></a></li>`).join("")}</ul></div>`}
+function renderSearch(q){const term=decodeURIComponent(q).toLowerCase(),rows=CHAPTERS.filter(c=>`${c.title} ${c.summary} ${c.body}`.toLowerCase().includes(term));mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Endèks",href:"#route-endeks"},{label:term}])}${pageHead("Rezilta rechèch",`Rezilta pou ${term}`,`${rows.length} chapit jwenn.`)}<ul class="toc-list">${rows.map(c=>`<li class="toc-item"><a href="#route-chapit-${c.id}"><span class="toc-num">${esc(c.num)}</span><span class="toc-text"><strong>${esc(c.title)}</strong><small>${esc(c.summary)}</small></span></a></li>`).join("")}</ul></div>`}
+function renderAssistant(){mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Asistan AI"}])}${pageHead("Asistan ki baze sou liv la","Asistan Entèlijan Nouvo Ayiti","Repons yo limite ak kontni liv la.")}<form id="assistantForm" class="contact-form"><textarea id="assistantQuestion" rows="4" placeholder="Ki sa liv la di sou DGI?" required></textarea><button class="btn btn-primary">Poze kesyon an</button></form><div id="assistantAnswer" class="page-prose"></div></div>`;mount.querySelector("form").addEventListener("submit",e=>{e.preventDefault();const q=mount.querySelector("#assistantQuestion").value,rows=related(q.split(/\s+/).filter(x=>x.length>3));mount.querySelector("#assistantAnswer").innerHTML=rows.slice(0,5).map(c=>`<p><strong>Chapit ${esc(c.num)} — ${esc(c.title)}</strong><br>${esc(c.summary)} <a href="#route-chapit-${c.id}">Li chapit la →</a></p>`).join("")||"<p>Mwen pa jwenn repons lan nan kontni liv la.</p>"})}
+function renderDownloads(){mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Telechaje"}])}${pageHead("Sant telechajman","Telechaje Liv la","Fòma ofisyèl yo ap disponib sou platfòm la.")}<div class="cards-grid"><article class="pillar-card"><h2>PDF</h2><p>Vèsyon dijital liv la.</p><span>Disponib byento</span></article><article class="pillar-card"><h2>EPUB</h2><p>Fòma pou lektè elektwonik.</p><span>Disponib byento</span></article><article class="pillar-card"><h2>Audiobook</h2><p>Vèsyon odyo liv la.</p><span>Disponib byento</span></article></div></div>`}
+function renderCommunity(){mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Kominote"}])}${pageHead("Kominote","Pataje refleksyon ou","Kòmantè, sijesyon ak kestyon lektè yo ede konvèsasyon an grandi.")}<form id="communityForm" class="contact-form"><label>Non<input required></label><label>Imèl<input type="email" required></label><label>Kòmantè<textarea required rows="5"></textarea></label><button class="btn btn-primary">Voye kòmantè a</button><small id="communityMsg" aria-live="polite"></small></form></div>`;mount.querySelector("form").addEventListener("submit",e=>{e.preventDefault();mount.querySelector("#communityMsg").textContent="Mèsi. Kòmantè ou pare pou revizyon."})}
+
 function renderNotFound() {
   mount.innerHTML = `
     <div class="container book-container">
@@ -635,6 +660,12 @@ function renderNotFound() {
 const ROUTES = {
   "/liv": renderBookPage,
   "/chapit": renderIndex,
+  "/pilye": renderPillars,
+  "/vizyon-nasyonal": renderVision,
+  "/endeks": renderIndexPage,
+  "/asistan-ai": renderAssistant,
+  "/telechaje": renderDownloads,
+  "/kominote": renderCommunity,
   "/enfografik": renderInfographics,
   "/bibliyografi": renderBibliography,
   "/glose": renderGlossary,
@@ -687,6 +718,24 @@ function route() {
   } else if (rest.startsWith("bakmatye-")) {
     renderDoc(BACKMATTER, "bakmatye", rest.slice("bakmatye-".length), "Paj final");
     setActive("/chapit");
+  } else if (rest === "pilye") {
+    renderPillars();
+    setActive("/pilye");
+  } else if (rest === "vizyon-nasyonal") {
+    renderVision();
+    setActive("/vizyon-nasyonal");
+  } else if (rest === "endeks") {
+    renderIndexPage();
+    setActive("/endeks");
+  } else if (rest === "asistan-ai") {
+    renderAssistant();
+    setActive("/asistan-ai");
+  } else if (rest.startsWith("pilye-")) {
+    renderPillar(rest.slice("pilye-".length));
+    setActive("/pilye");
+  } else if (rest.startsWith("search-")) {
+    renderSearch(rest.slice("search-".length));
+    setActive("/endeks");
   } else if (rest.startsWith("aneks-")) {
     // keep prev/next within the annex's own group (Prensipal vs Konplemantè)
     const id = rest.slice("aneks-".length);
