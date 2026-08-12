@@ -302,7 +302,7 @@ function renderChapter(id) {
           <span class="chapter-badge">Chapit ${esc(c.num)}</span>
           <h1>${esc(c.title)}</h1>
           <p class="chapter-summary">${esc(c.summary)}</p>
-          <div class="chapter-tools"><button class="btn btn-outline" id="speakChapter" type="button">Koute Chapit la</button><button class="btn btn-ghost" id="bookmarkChapter" type="button">Sove chapit la</button><label>Vitès <select id="speechRate"><option value="0.8">0.8×</option><option value="1" selected>1×</option><option value="1.2">1.2×</option></select></label></div>
+          <div class="chapter-tools"><button class="btn btn-outline" id="speakChapter" type="button" aria-controls="chapterAudioPlayer" aria-expanded="false">Koute chapit la</button><button class="btn btn-ghost" id="bookmarkChapter" type="button">Sove chapit la</button></div>
         </header>
         <div class="chapter-body">
           ${renderBody(c.body)}
@@ -318,16 +318,34 @@ function renderChapter(id) {
         </section>
       </article>
     </div>`;
-  const audio = mount.querySelector("#speakChapter");
-  const text = [...mount.querySelectorAll(".chapter-body p")].map((p) => p.textContent).join("\\n\\n");
-  let utterance;
-  audio?.addEventListener("click", () => {
-    if (!("speechSynthesis" in window)) { audio.textContent = "Odyo pa disponib"; return; }
-    if (speechSynthesis.speaking && !speechSynthesis.paused) { speechSynthesis.pause(); audio.textContent = "Kontinye"; return; }
-    if (speechSynthesis.paused) { speechSynthesis.resume(); audio.textContent = "Poz"; return; }
-    utterance = new SpeechSynthesisUtterance(text); utterance.lang = "ht-HT"; utterance.rate = Number(mount.querySelector("#speechRate").value); utterance.onend = () => { audio.textContent = "Koute Chapit la"; }; speechSynthesis.speak(utterance); audio.textContent = "Poz";
-  });
-  mount.querySelector("#speechRate")?.addEventListener("change", (e) => { if (utterance) utterance.rate = Number(e.target.value); });
+  const audioTrigger = mount.querySelector("#speakChapter");
+  const chapterBlocks = [...mount.querySelectorAll(".chapter-body h2, .chapter-body h3, .chapter-body p, .chapter-body li")]
+    .map((element) => element.textContent.replace(/[•▪◦→←]/g, " ").replace(/\\s+/g, " ").trim())
+    .filter(Boolean);
+  const player = document.createElement("section");
+  player.id = "chapterAudioPlayer";
+  player.className = "chapter-audio-player";
+  player.setAttribute("aria-label", "Lektè odyo chapit la");
+  player.innerHTML = `<div class="audio-player-head"><strong>Koute chapit la</strong><span id="audioVoiceStatus">Ap chèche vwa…</span></div><div class="audio-player-controls"><button class="btn btn-primary" id="audioPlay" type="button" aria-label="Li chapit la">Li</button><button class="btn btn-outline" id="audioPause" type="button" aria-label="Mete odyo a sou poz">Poz</button><button class="btn btn-outline" id="audioResume" type="button" aria-label="Kontinye li chapit la">Kontinye</button><button class="btn btn-ghost" id="audioStop" type="button" aria-label="Sispann odyo a">Sispann</button></div><div class="audio-player-options"><label for="audioRate">Vitès <select id="audioRate"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option></select></label><label for="audioVoice">Vwa <select id="audioVoice"></select></label></div><div class="audio-progress"><div class="audio-progress-bar"><span id="audioProgressBar"></span></div><div class="audio-progress-meta"><span id="audioSection">Pare pou kòmanse</span><span id="audioRemaining"></span></div></div>`;
+  mount.querySelector(".chapter-page")?.prepend(player);
+  const audioState = { index: 0, utterance: null, voices: [] };
+  const voiceSelect = player.querySelector("#audioVoice");
+  const voiceStatus = player.querySelector("#audioVoiceStatus");
+  const progressBar = player.querySelector("#audioProgressBar");
+  const sectionLabel = player.querySelector("#audioSection");
+  const remainingLabel = player.querySelector("#audioRemaining");
+  const supported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  const cleanVoiceName = (voice) => `${voice.name} (${voice.lang})${voice.lang.toLowerCase().startsWith("ht") ? " — Kreyòl ayisyen" : " — vwa altènatif"}`;
+  const loadVoices = () => {
+    audioState.voices = window.speechSynthesis.getVoices().sort((a, b) => Number(b.lang.toLowerCase().startsWith("ht")) - Number(a.lang.toLowerCase().startsWith("ht")) || a.name.localeCompare(b.name));
+    voiceSelect.innerHTML = audioState.voices.map((voice, index) => `<option value="${index}">${esc(cleanVoiceName(voice))}</option>`).join("");
+    const preferred = audioState.voices.findIndex((voice) => voice.lang.toLowerCase().startsWith("ht"));
+    if (preferred >= 0) voiceSelect.value = String(preferred);
+    voiceStatus.textContent = audioState.voices.length ? cleanVoiceName(audioState.voices[Number(voiceSelect.value) || 0]) : "Vwa aparèy la pa disponib";
+  };
+  const updateProgress = () => { const done = audioState.index; progressBar.style.width = `${chapterBlocks.length ? (done / chapterBlocks.length) * 100 : 0}%`; sectionLabel.textContent = done < chapterBlocks.length ? `Seksyon ${done + 1} / ${chapterBlocks.length}` : "Lekti fini"; const words = chapterBlocks.slice(done).join(" ").split(/\\s+/).length; remainingLabel.textContent = words ? `~${Math.max(1, Math.ceil(words / (130 * Number(player.querySelector("#audioRate").value))))} minit ki rete` : ""; };
+  const speakCurrent = () => { if (!supported || audioState.index >= chapterBlocks.length) return; const utterance = new SpeechSynthesisUtterance(chapterBlocks[audioState.index]); const voice = audioState.voices[Number(voiceSelect.value)]; if (voice) { utterance.voice = voice; utterance.lang = voice.lang; } else utterance.lang = "ht-HT"; utterance.rate = Number(player.querySelector("#audioRate").value); utterance.onstart = () => { sectionLabel.textContent = `Seksyon ${audioState.index + 1} / ${chapterBlocks.length}`; }; utterance.onend = () => { audioState.index += 1; updateProgress(); if (audioState.index < chapterBlocks.length) speakCurrent(); else audioTrigger.textContent = "Koute chapit la"; }; utterance.onerror = () => { sectionLabel.textContent = "Odyo pa disponib sou aparèy sa a"; audioTrigger.textContent = "Koute chapit la"; }; audioState.utterance = utterance; updateProgress(); window.speechSynthesis.speak(utterance); };
+  if (!supported) { player.innerHTML = `<p class="audio-unavailable">Navigatè sa a pa sipòte lekti vwa. Tanpri eseye yon navigatè ki sipòte Web Speech API.</p>`; audioTrigger.disabled = true; } else { loadVoices(); window.speechSynthesis.addEventListener("voiceschanged", loadVoices); audioTrigger.addEventListener("click", () => { player.classList.add("is-visible"); audioTrigger.setAttribute("aria-expanded", "true"); if (window.speechSynthesis.paused) window.speechSynthesis.resume(); else if (!window.speechSynthesis.speaking) { audioState.index = 0; speakCurrent(); } }); player.querySelector("#audioPlay").addEventListener("click", () => { if (!window.speechSynthesis.speaking) { if (audioState.index >= chapterBlocks.length) audioState.index = 0; speakCurrent(); } }); player.querySelector("#audioPause").addEventListener("click", () => window.speechSynthesis.pause()); player.querySelector("#audioResume").addEventListener("click", () => window.speechSynthesis.resume()); player.querySelector("#audioStop").addEventListener("click", () => { window.speechSynthesis.cancel(); audioState.index = 0; audioState.utterance = null; updateProgress(); audioTrigger.textContent = "Koute chapit la"; }); player.querySelector("#audioRate").addEventListener("change", () => { if (audioState.utterance) { window.speechSynthesis.cancel(); speakCurrent(); } updateProgress(); }); voiceSelect.addEventListener("change", () => { voiceStatus.textContent = audioState.voices[Number(voiceSelect.value)] ? cleanVoiceName(audioState.voices[Number(voiceSelect.value)]) : "Vwa aparèy la pa disponib"; if (window.speechSynthesis.speaking) { window.speechSynthesis.cancel(); speakCurrent(); } }); updateProgress(); }
   mount.querySelector("[data-comment-form]")?.addEventListener("submit", (event) => { event.preventDefault(); const message = mount.querySelector("[data-comment-message]"); message.textContent = "Mèsi. Kòmantè ou pare pou revizyon."; event.currentTarget.reset(); });
   const bookmark = mount.querySelector("#bookmarkChapter"); const key = `novo-ayiti-bookmark-${c.id}`;
   if (sessionStorage.getItem(key) === "1") bookmark.textContent = "Chapita sove";
