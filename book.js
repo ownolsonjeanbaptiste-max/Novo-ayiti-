@@ -580,7 +580,7 @@ function renderAuthorPage() {
       <div class="author-page">
         <div class="author-page-visual">
           <div class="author-visual">
-            <div class="author-initials">OJB</div>
+            <img class="author-photo" src="/author-photo.jpg" alt="Ownolson Jean Baptiste, otè Nouvo Ayiti" width="900" height="1600" loading="eager" />
             <div class="author-badge">${esc(a.badge)}</div>
           </div>
         </div>

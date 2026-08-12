@@ -466,6 +466,8 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--font-display); font-weight: 800;
   font-size: 5rem; color: var(--gold); letter-spacing: 0.04em;
 }
+.author-photo { width: 100%; height: 100%; object-fit: contain; object-position: center top; border-radius: inherit; display: block; }
+.author-page-visual .author-photo { max-height: 520px; object-fit: contain; }
 .author-badge {
   position: absolute; bottom: 18px;
   background: rgba(255,255,255,0.1);
