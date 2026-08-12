@@ -292,6 +292,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Preserve the homepage card design while making each whole card a route link.
+  document.querySelectorAll(".pillar-card").forEach((card, index) => {
+    const routes = ["justice", "security", "governance", "economy", "education", "health", "infrastructure", "agriculture", "environment", "digital"];
+    const route = routes[index];
+    if (!route || card.closest("a")) return;
+    card.setAttribute("role", "link");
+    card.setAttribute("tabindex", "0");
+    const open = () => { location.hash = `#route-pilye-${route}`; };
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+  });
+  document.querySelectorAll(".chapter-item").forEach((card) => {
+    if (card.closest("a")) return;
+    const link = card.querySelector("a[href]");
+    if (!link) return;
+    card.setAttribute("role", "link");
+    card.setAttribute("tabindex", "0");
+    const open = () => { location.hash = link.getAttribute("href"); };
+    card.addEventListener("click", (e) => { if (e.target.closest("a")) return; open(); });
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+  });
+
   // Scroll reveal
   const revealTargets = document.querySelectorAll(
     ".hero-copy, .hero-card-wrap, .two-col > div, .section-head, .pillar-card, .chapter-item, .author-visual, .author-copy, .newsletter-box"

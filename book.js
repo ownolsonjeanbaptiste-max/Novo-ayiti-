@@ -25,6 +25,7 @@ import {
   AUTHOR_PAGE,
   CONTACT_PAGE,
 } from "/pages-data.js";
+import { PILLARS, VISION_PAGE, SOCIAL_LINKS, INDEX_TERMS, searchBook, readingMinutes } from "/pillars-data.js";
 
 const mount = document.getElementById("book-view");
 const homeMain = document.querySelector("main");
@@ -225,6 +226,47 @@ function renderIndex() {
   });
 }
 
+function chapterTools(c) {
+  const saved = localStorage.getItem(`novo-fav-${c.id}`) === "1";
+  return `<div class="chapter-tools" data-chapter-tools="${c.id}">
+    <button class="btn btn-ghost chapter-action" data-bookmark="${c.id}" aria-pressed="${saved}">${saved ? "Retire makè" : "Mete makè"}</button>
+    <button class="btn btn-ghost chapter-action" data-share="${c.id}">Pataje</button>
+    <button class="btn btn-primary chapter-action" data-speak="${c.id}">Koute Chapit la</button>
+    <select class="speech-speed" aria-label="Vitès lekti"><option value="0.85">0.85×</option><option value="1" selected>1×</option><option value="1.15">1.15×</option><option value="1.35">1.35×</option></select>
+    <button class="btn btn-ghost chapter-action" data-stop-speech="${c.id}">Sispann</button>
+  </div><div class="speech-status" aria-live="polite"></div>`;
+}
+
+function wireChapterTools(c, article) {
+  const bookmark = article.querySelector(`[data-bookmark="${c.id}"]`);
+  bookmark?.addEventListener("click", () => {
+    const next = localStorage.getItem(`novo-fav-${c.id}`) !== "1";
+    localStorage.setItem(`novo-fav-${c.id}`, next ? "1" : "0");
+    bookmark.textContent = next ? "Retire makè" : "Mete makè";
+    bookmark.setAttribute("aria-pressed", String(next));
+  });
+  article.querySelector(`[data-share="${c.id}"]`)?.addEventListener("click", async () => {
+    const url = location.href;
+    if (navigator.share) await navigator.share({ title: c.title, text: c.summary, url });
+    else { await navigator.clipboard?.writeText(url); article.querySelector(".speech-status").textContent = "Lyen an kopye."; }
+  });
+  const status = article.querySelector(".speech-status");
+  const text = [...article.querySelectorAll(".chapter-body p")].map((p) => p.textContent.trim()).filter(Boolean).join(" ");
+  article.querySelector(`[data-speak="${c.id}"]`)?.addEventListener("click", () => {
+    if (!("speechSynthesis" in window)) { status.textContent = "Navigatè sa a pa sipòte odyo."; return; }
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ht-HT";
+    utterance.rate = Number(article.querySelector(".speech-speed")?.value || 1);
+    const voices = speechSynthesis.getVoices();
+    utterance.voice = voices.find((v) => /ht|creole/i.test(`${v.lang} ${v.name}`)) || voices.find((v) => /^fr/i.test(v.lang)) || null;
+    utterance.onstart = () => { status.textContent = "Lekti ap jwe…"; };
+    utterance.onend = () => { status.textContent = "Lekti fini."; };
+    speechSynthesis.speak(utterance);
+  });
+  article.querySelector(`[data-stop-speech="${c.id}"]`)?.addEventListener("click", () => { speechSynthesis.cancel(); status.textContent = "Lekti sispann."; });
+}
+
 /* ---------- Single Chapter ---------- */
 function renderChapter(id) {
   const i = indexOfChapter(id);
@@ -276,6 +318,8 @@ function renderChapter(id) {
           <span class="chapter-badge">Chapit ${esc(c.num)}</span>
           <h1>${esc(c.title)}</h1>
           <p class="chapter-summary">${esc(c.summary)}</p>
+          <div class="chapter-meta"><span>${readingMinutes(c)} minit lekti</span><span>${PILLARS.filter((p) => p.chapters.some((x) => x.id === c.id)).map((p) => esc(p.name)).join(" · ") || "Vizyon nasyonal"}</span></div>
+          ${chapterTools(c)}
         </header>
         <div class="chapter-body">
           ${renderBody(c.body)}
@@ -287,6 +331,7 @@ function renderChapter(id) {
         </div>
       </article>
     </div>`;
+  wireChapterTools(c, mount.querySelector(".chapter-page"));
 }
 
 /* ---------- Generic document page (front matter + annexes) ----------
@@ -344,6 +389,34 @@ function renderDoc(collection, kind, id, sectionLabel) {
       </article>
     </div>`;
 }
+
+function renderPillars() {
+  const cards = PILLARS.map((p) => `<a class="pillar-card platform-card" href="#route-pilye-${p.id}"><span class="eyebrow dark">Pilye</span><h2>${esc(p.name)}</h2><p>${esc(p.description)}</p><strong>Eksplore Pilye a →</strong></a>`).join("");
+  mount.innerHTML = `<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"10 Pilye Vizyon Nouvo Ayiti"}])}${pageHead("Vizyon nasyonal","10 Pilye Vizyon Nouvo Ayiti","Dis domèn ki konekte pou fòme yon sistèm nasyonal ki pi efikas, transparan ak dirab.")}<div class="cards-grid platform-grid">${cards}</div></div>`;
+}
+
+function renderPillar(id) {
+  const p = PILLARS.find((x) => x.id === id); if (!p) return renderNotFound();
+  const rows = p.chapters.map((c) => `<a class="toc-item" href="#route-chapit-${c.id}"><span class="toc-num">${esc(c.num)}</span><span class="toc-text"><strong>${esc(c.title)}</strong><small>${esc(c.summary)}</small></span><span>→</span></a>`).join("");
+  mount.innerHTML = `<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Pilye yo",href:"#route-pilye"},{label:p.name}])}${pageHead("Pilye estratejik",p.name,p.description)}<section class="page-section"><h2 class="page-subtitle">Chapit ak refòm ki gen rapò</h2><div class="toc-list">${rows || "<p>Kontni pilye sa a ap grandi ak nouvo edisyon an.</p>"}</div></section></div>`;
+}
+
+function renderVision() {
+  const sections = VISION_PAGE.sections.map(([title, body]) => `<section class="page-section"><h2 class="page-subtitle">${esc(title)}</h2><div class="page-prose"><p>${esc(body)}</p></div></section>`).join("");
+  mount.innerHTML = `<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:VISION_PAGE.title}])}${pageHead("Vizyon nasyonal",VISION_PAGE.title,VISION_PAGE.lead)}${sections}<a class="btn btn-primary" href="#route-pilye">Eksplore 10 pilye yo</a></div>`;
+}
+
+function renderIndexTerms() {
+  const rows = INDEX_TERMS.sort((a,b)=>a.localeCompare(b,"ht")).map((term) => { const matches = searchBook(term); return `<li class="toc-item" data-search="${esc(term.toLowerCase())}"><strong>${esc(term)}</strong><span>${matches.map(c=>`<a href="#route-chapit-${c.id}">${esc(c.num)}</a>`).join(" · ") || "Pa jwenn chapit"}</span></li>`; }).join("");
+  mount.innerHTML = `<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Endèks"}])}${pageHead("Rechèch", "Endèks tèm yo", "Klike sou yon nimewo pou ouvri chapit ki gen rapò ak tèm nan.")}<div class="toc-search"><input id="indexSearch" type="search" placeholder="Chèche yon tèm…" aria-label="Chèche nan endèks la" /></div><ul class="toc-list index-list">${rows}</ul></div>`;
+  const input=mount.querySelector("#indexSearch"); const items=[...mount.querySelectorAll(".toc-item")]; input.addEventListener("input",()=>{const q=input.value.toLowerCase();items.forEach(x=>x.hidden=q&&!x.dataset.search.includes(q));});
+}
+
+function renderDownloads() { mount.innerHTML = `<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Telechaje"}])}${pageHead("Resous","Telechaje Liv la","Chwazi fòma ou vle a.")}<div class="download-grid"><a class="btn btn-primary" href="/Novo_Ayiti.pdf" download>Telechaje PDF</a><span class="btn btn-ghost disabled">EPUB — Disponib byento</span><span class="btn btn-ghost disabled">Kindle — Disponib byento</span><span class="btn btn-ghost disabled">Audiobook — Disponib byento</span></div></div>`; }
+
+function renderSocial() { const links=SOCIAL_LINKS.map(s=>`<a class="btn btn-ghost" href="${esc(s.href)}" target="_blank" rel="noopener noreferrer">${esc(s.label)}</a>`).join(""); mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Suiv Nouvo Ayiti"}])}${pageHead("Kominote","Suiv Nouvo Ayiti","Rete konekte ak pwojè a sou chanèl ofisyèl yo.")}<div class="social-links">${links}</div></div>`; }
+
+function renderAssistant() { mount.innerHTML=`<div class="container book-container">${breadcrumb([HOME_CRUMB,{label:"Asistan AI"}])}${pageHead("Rechèch nan liv la","Asistan Entèlijan Nouvo Ayiti","Poze yon kesyon; repons yo baze sèlman sou kontni liv la.")}<form id="assistantForm" class="contact-form"><label>Kesyon<input id="assistantInput" required placeholder="Ki sa liv la di sou edikasyon?" /></label><button class="btn btn-primary">Chèche nan liv la</button></form><div id="assistantResults" class="page-section"></div></div>`; const form=mount.querySelector("#assistantForm"); form.addEventListener("submit",(e)=>{e.preventDefault();const q=mount.querySelector("#assistantInput").value;const hits=searchBook(q);mount.querySelector("#assistantResults").innerHTML=hits.length?`<h2 class="page-subtitle">Sa liv la di</h2>${hits.slice(0,8).map(c=>`<article class="assistant-hit"><a href="#route-chapit-${c.id}"><strong>Chapit ${esc(c.num)} — ${esc(c.title)}</strong></a><p>${esc(c.summary)}</p></article>`).join("")}`:`<p>Pa gen chapit ki koresponn ak kesyon sa a. Eseye yon mo tankou DGI, sekirite oswa edikasyon.</p>`;}); }
 
 /* ---------- The Book ---------- */
 function renderBookPage() {
@@ -462,7 +535,7 @@ function renderBibliography() {
     <div class="container book-container">
       ${breadcrumb([HOME_CRUMB, { label: "Bibliyografi" }])}
       ${pageHead("Referans", "Bibliyografi", "Sous, referans ak dokiman ki sèvi kòm baz pou plan estratejik la.")}
-      <div class="chapter-body">${renderBody(BIBLIOGRAPHY)}</div>
+      <div class="chapter-body">${renderBody(BOOK_BIBLIOGRAPHY)}</div>
     </div>`;
 }
 
@@ -470,7 +543,7 @@ function renderBibliography() {
 function renderGlossary() {
   // Render the manuscript's real glossary (prose paragraphs) and make each
   // entry searchable. renderBody() turns the source into <p> blocks.
-  const html = renderBody(GLOSSARY);
+  const html = renderBody(BOOK_GLOSSARY);
   mount.innerHTML = `
     <div class="container book-container">
       ${breadcrumb([HOME_CRUMB, { label: "Glosè" }])}
@@ -639,7 +712,15 @@ const ROUTES = {
   "/bibliyografi": renderBibliography,
   "/glose": renderGlossary,
   "/ote": renderAuthorPage,
+  "/sou-ote-a": renderAuthorPage,
   "/kontak": renderContact,
+  "/pilye": renderPillars,
+  "/vizyon-nasyonal": renderVision,
+  "/endeks": renderIndexTerms,
+  "/downloads": renderDownloads,
+  "/audio": renderDownloads,
+  "/kominote": renderSocial,
+  "/asistan-ai": renderAssistant,
 };
 
 function enterPage() {
@@ -687,6 +768,9 @@ function route() {
   } else if (rest.startsWith("bakmatye-")) {
     renderDoc(BACKMATTER, "bakmatye", rest.slice("bakmatye-".length), "Paj final");
     setActive("/chapit");
+  } else if (rest.startsWith("pilye-")) {
+    renderPillar(rest.slice("pilye-".length));
+    setActive("/pilye");
   } else if (rest.startsWith("aneks-")) {
     // keep prev/next within the annex's own group (Prensipal vs Konplemantè)
     const id = rest.slice("aneks-".length);
