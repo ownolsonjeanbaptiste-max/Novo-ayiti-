@@ -709,7 +709,7 @@ function renderContact() {
 const PILLARS = [
   ["jistis", "Jistis", "Tribinal modèn, aksè ak dwa sitwayen yo.", [1, 4, 9, 22], ["jistis", "tribinal", "dwa"]],
   ["sekirite", "Sekirite", "Polis pwofesyonèl ak pwoteksyon kominote yo.", [6, 7, 17, 20], ["sekirite", "polis", "fwontyè", "trafik moun", "pwoteksyon sivil"]],
-  ["gouvènans", "Bon gouvènans", "Enstitisyon solid, transparans ak responsabilite.", [1, 2, 3, 5, 8, 9, 11], ["gouvènans", "administrasyon", "meritokrasi", "transparans", "responsabilite", "koripsyon"]],
+  ["gouverans", "Bon gouvènans", "Enstitisyon solid, transparans ak responsabilite.", [1, 2, 3, 5, 8, 9, 11], ["gouvènans", "administrasyon", "meritokrasi", "transparans", "responsabilite", "koripsyon"]],
   ["ekonomi", "Ekonomi", "Travay, antreprenarya ak pwodiksyon nasyonal.", [11, 12, 13, 14, 15, 16, 18, 24], ["ekonomik", "ekonomi", "envestisman", "endistri", "travay", "mache", "fiskal", "finans"]],
   ["edikasyon", "Edikasyon", "Fòmasyon teknik, kalite ak rechèch.", [1, 9, 23], ["edikasyon", "fòmasyon", "inivèsite", "lekòl"]],
   ["sante", "Sante", "Swen aksesib ak prevansyon.", [19, 20, 21], ["sante", "lopital", "medikal", "pwoteksyon sosyal"]],
