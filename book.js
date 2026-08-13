@@ -219,11 +219,30 @@ function renderIndex() {
         <h1 class="section-title">${esc(BOOK_TITLE)} — Tab matyè konplè</h1>
         <p>${esc(BOOK_SUBTITLE)}</p>
 
-        <div class="toc-search">
-          <input id="tocSearch" type="search" autocomplete="off"
-                 placeholder="Chèche yon chapit, yon tèm oswa yon mo kle…"
-                 aria-label="Chèche nan tab matyè a" />
+        <div class="toc-search" data-search-shell>
+          <div class="toc-search-row">
+            <input id="tocSearch" type="search" autocomplete="off"
+                   placeholder="Chèche nan liv la oswa poze AI yon kestyon…"
+                   aria-label="Chèche nan liv la oswa poze AI yon kestyon" />
+            <select id="tocSearchMode" aria-label="Mòd rechèch">
+              <option value="search">Rechèch</option>
+              <option value="ai">Mande AI</option>
+            </select>
+          </div>
           <span class="toc-count" id="tocCount"></span>
+          <section id="aiSearchPanel" class="ai-search-panel" hidden aria-label="Asistan Entèlijan Nouvo Ayiti">
+            <div class="ai-search-head">
+              <strong>Asistan Entèlijan Nouvo Ayiti</strong>
+              <button class="btn btn-ghost ai-close" id="aiClose" type="button" aria-label="Fèmen AI">×</button>
+            </div>
+            <div id="aiConversation" class="ai-conversation" aria-live="polite">
+              <p class="ai-setup-state">Asistan AI a poko konekte. Lè yon API AI ak yon endpoint rechèch liv la disponib, li ap reponn sèlman ak sous Novo Ayiti yo.</p>
+            </div>
+            <div class="ai-actions">
+              <button class="btn btn-ghost" id="aiNewQuestion" type="button">Nouvo kestyon</button>
+              <button class="btn btn-ghost" id="aiClear" type="button">Efase konvèsasyon</button>
+            </div>
+          </section>
         </div>
       </header>
 
@@ -233,6 +252,18 @@ function renderIndex() {
 
   // Wire search
   const input = mount.querySelector("#tocSearch");
+  const mode = mount.querySelector("#tocSearchMode");
+  const aiPanel = mount.querySelector("#aiSearchPanel");
+  const aiConversation = mount.querySelector("#aiConversation");
+  const closeAi = () => { mode.value = "search"; aiPanel.hidden = true; input.focus(); };
+  mount.querySelector("#aiClose").addEventListener("click", closeAi);
+  mount.querySelector("#aiNewQuestion").addEventListener("click", () => { input.value = ""; input.focus(); });
+  mount.querySelector("#aiClear").addEventListener("click", () => { aiConversation.innerHTML = '<p class="ai-setup-state">Konvèsasyon an efase. Poze yon kestyon sou liv Novo Ayiti a.</p>'; input.focus(); });
+  mode.addEventListener("change", () => {
+    const isAi = mode.value === "ai";
+    aiPanel.hidden = !isAi;
+    if (isAi) input.focus();
+  });
   const items = [...mount.querySelectorAll(".toc-item")];
   const groupsEls = [...mount.querySelectorAll(".toc-group")];
   const empty = mount.querySelector("#tocEmpty");
@@ -246,6 +277,10 @@ function renderIndex() {
   updateCount(total);
 
   input.addEventListener("input", () => {
+    if (mode.value === "ai") {
+      aiConversation.innerHTML = '<p class="ai-setup-state">API AI a poko konfigire. Pa gen repons envante: konekte yon endpoint ki itilize chapit, pilye, glosè ak bibliyografi Novo Ayiti kòm sous.</p>';
+      return;
+    }
     const q = input.value.trim().toLowerCase();
     let visible = 0;
     items.forEach((li) => {

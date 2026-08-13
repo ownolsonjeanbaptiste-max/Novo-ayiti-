@@ -593,6 +593,14 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 0 0 3px var(--primary-tint);
 }
 .toc-count { font-size: 0.82rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
+.toc-search-row { display: flex; flex: 1; min-width: min(100%, 320px); gap: 10px; align-items: center; }
+.toc-search-row select { padding: 13px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; }
+.ai-search-panel { width: 100%; margin-top: 12px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.ai-search-head, .ai-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ai-close { min-width: 40px; min-height: 40px; padding: 8px 12px; }
+.ai-conversation { max-height: 220px; overflow-y: auto; margin: 14px 0; color: var(--ink-soft); line-height: 1.6; }
+.ai-setup-state { margin: 0; }
+.ai-actions { justify-content: flex-start; flex-wrap: wrap; }
 
 .toc-group { margin-bottom: 30px; }
 .toc-part {
