@@ -74,25 +74,19 @@ window.addEventListener(
   const esc = (s = "") =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// Preserve imported HTML structure. KPI blocks are rendered as tables rather
-// than being flattened into ordinary paragraphs.
+// Preserve KPI cells exactly as authored in the source HTML. We only normalize
+// already-delimited rows/cells; no content, values, targets, or notes are inferred.
 function renderKpiTable(blocks) {
-  const text = blocks.map((p) => p.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()).join(" ");
-  const heading = "Endikatè Pèfòmans (KPI)";
-  const content = text.replace(/^.*?Endikatè Pèfòmans\s*\(KPI\)\s*/i, "").replace(/^Endikatè\s+Objektif\s*/i, "").trim();
-  const targets = /(Pi wo pase 99%|100%|Ogmante|Diminye|Swiv epi rapòte|Swiv|Pi wo)/gi;
-  const rows = [];
-  let last = 0;
-  let match;
-  while ((match = targets.exec(content))) {
-    const indicator = content.slice(last, match.index).trim();
-    if (indicator) rows.push(`<tr><th scope="row" data-label="Endikatè">${esc(indicator)}</th><td data-label="Objektif">${esc(match[0])}</td></tr>`);
-    last = targets.lastIndex;
+  const source = blocks.join("");
+  const table = source.match(/<table\b[\s\S]*?<\/table>/i)?.[0];
+  if (table) {
+    return `<div class="book-table-wrap" role="region" aria-label="Endikatè Pèfòmans (KPI)" tabindex="0">${table.replace(/<table\b/i, '<table class="book-table"') .replace(/<th(?![^>]*scope=)/gi, '<th scope="col"')}</div>`;
   }
-  const remainder = content.slice(last).trim();
-  if (remainder) rows.push(`<tr><th scope="row" data-label="Endikatè">${esc(remainder)}</th><td data-label="Objektif"></td></tr>`);
-  if (!rows.length) rows.push(`<tr><td colspan="2">${esc(content)}</td></tr>`);
-  return `<div class="book-table-wrap" role="region" aria-label="${esc(heading)}" tabindex="0"><table class="book-table"><caption>${esc(heading)}</caption><thead><tr><th scope="col">Endikatè</th><th scope="col">Objektif</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+  const heading = "Endikatè Pèfòmans (KPI)";
+  const rows = blocks.flatMap((block) => [...block.matchAll(/<tr\b[\s\S]*?<\/tr>/gi)].map((match) => match[0]));
+  if (!rows.length) return blocks.join("");
+  const header = rows.find((row) => /<th\b/i.test(row)) || rows.shift();
+  return `<div class="book-table-wrap" role="region" aria-label="${esc(heading)}" tabindex="0"><table class="book-table"><caption>${esc(heading)}</caption><thead>${header ? `<tr>${header.replace(/^\s*<tr[^>]*>|<\/tr>\s*$/gi, "")}</tr>` : ""}</thead><tbody>${rows.join("")}</tbody></table></div>`;
 }
 
 function renderBody(body = "") {
