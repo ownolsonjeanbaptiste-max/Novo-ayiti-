@@ -259,6 +259,27 @@ function renderIndex() {
   mount.querySelector("#aiClose").addEventListener("click", closeAi);
   mount.querySelector("#aiNewQuestion").addEventListener("click", () => { input.value = ""; input.focus(); });
   mount.querySelector("#aiClear").addEventListener("click", () => { aiConversation.innerHTML = '<p class="ai-setup-state">Konvèsasyon an efase. Poze yon kestyon sou liv Novo Ayiti a.</p>'; input.focus(); });
+  const answerFromBook = (question) => {
+    const terms = question.toLowerCase().split(/[^a-zà-ÿ0-9]+/i).filter((term) => term.length > 2);
+    const matches = CHAPTERS.map((chapter) => {
+      const haystack = `${chapter.title} ${chapter.summary} ${chapter.body}`.toLowerCase();
+      return { chapter, score: terms.reduce((score, term) => score + (haystack.includes(term) ? 1 : 0), 0) };
+    }).filter(({ score }) => score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
+    if (!question.trim()) return "Poze yon kestyon sou sijè liv la.";
+    if (!matches.length) return "Mwen pa jwenn yon repons verifyab nan kontni Novo Ayiti a. Eseye yon mo kle tankou jistis, edikasyon, sante, agrikilti oswa gouvènans.";
+    const citations = matches.map(({ chapter }) => `<li><a href="#route-chapit-${chapter.id}">${esc(chapter.num)} — ${esc(chapter.title)}</a><small>${esc(chapter.summary)}</small></li>`).join("");
+    return `<p>Men seksyon ki pi pre kestyon ou a nan liv la. Li repons lan nan sous yo pou plis detay:</p><ul class="ai-citations">${citations}</ul><small class="ai-source-note">Sous: Novo Ayiti, chapit ak tèks ki enpòte nan Pati I–IV PDF yo.</small>`;
+  };
+  const askBook = () => {
+    if (mode.value !== "ai") return;
+    aiConversation.innerHTML = `<div class="ai-answer"><strong>Kestyon ou</strong><p>${esc(input.value)}</p>${answerFromBook(input.value)}</div>`;
+  };
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent?.isComposing && event.keyCode !== 229) {
+      event.preventDefault();
+      askBook();
+    }
+  });
   mode.addEventListener("change", () => {
     const isAi = mode.value === "ai";
     aiPanel.hidden = !isAi;
@@ -278,7 +299,7 @@ function renderIndex() {
 
   input.addEventListener("input", () => {
     if (mode.value === "ai") {
-      aiConversation.innerHTML = '<p class="ai-setup-state">API AI a poko konfigire. Pa gen repons envante: konekte yon endpoint ki itilize chapit, pilye, glosè ak bibliyografi Novo Ayiti kòm sous.</p>';
+      aiConversation.innerHTML = '<p class="ai-setup-state">Peze Enter pou chèche nan sous Novo Ayiti yo. Repons yo ap montre chapit ki sèvi kòm referans.</p>';
       return;
     }
     const q = input.value.trim().toLowerCase();
