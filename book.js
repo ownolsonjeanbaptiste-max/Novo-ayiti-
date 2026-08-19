@@ -79,20 +79,20 @@ window.addEventListener(
 function renderKpiTable(blocks) {
   const text = blocks.map((p) => p.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()).join(" ");
   const heading = "Endikatè Pèfòmans (KPI)";
-  const content = text.replace(/^.*?KPI/i, "").trim();
-  const targets = /(100%|Pi wo pase 99%|Ogmante|Diminye|Swiv epi rapòte|Swiv|Pi wo)/gi;
+  const content = text.replace(/^.*?Endikatè Pèfòmans\s*\(KPI\)\s*/i, "").replace(/^Endikatè\s+Objektif\s*/i, "").trim();
+  const targets = /(Pi wo pase 99%|100%|Ogmante|Diminye|Swiv epi rapòte|Swiv|Pi wo)/gi;
   const rows = [];
   let last = 0;
   let match;
   while ((match = targets.exec(content))) {
     const indicator = content.slice(last, match.index).trim();
-    if (indicator) rows.push(`<tr><th scope="row">${esc(indicator)}</th><td>${esc(match[0])}</td></tr>`);
+    if (indicator) rows.push(`<tr><th scope="row" data-label="Endikatè">${esc(indicator)}</th><td data-label="Objektif">${esc(match[0])}</td></tr>`);
     last = targets.lastIndex;
   }
   const remainder = content.slice(last).trim();
-  if (remainder) rows.push(`<tr><th scope="row">${esc(remainder)}</th><td></td></tr>`);
+  if (remainder) rows.push(`<tr><th scope="row" data-label="Endikatè">${esc(remainder)}</th><td data-label="Objektif"></td></tr>`);
   if (!rows.length) rows.push(`<tr><td colspan="2">${esc(content)}</td></tr>`);
-  return `<div class="book-table-wrap"><table class="book-table"><caption>${esc(heading)}</caption><thead><tr><th>Endikatè</th><th>Objektif</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+  return `<div class="book-table-wrap" role="region" aria-label="${esc(heading)}" tabindex="0"><table class="book-table"><caption>${esc(heading)}</caption><thead><tr><th scope="col">Endikatè</th><th scope="col">Objektif</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
 }
 
 function renderBody(body = "") {

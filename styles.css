@@ -720,6 +720,21 @@ a.chapter-nav-btn:hover { transform: translateY(-3px); box-shadow: var(--shadow-
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.in { opacity: 1; transform: none; }
 
+.book-table-wrap { width: 100%; margin: 24px 0; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); -webkit-overflow-scrolling: touch; }
+.book-table-wrap:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.book-table { width: 100%; min-width: 520px; border-collapse: collapse; table-layout: fixed; }
+.book-table caption { padding: 16px 18px; text-align: left; font-family: var(--font-display); font-weight: 700; color: var(--ink); }
+.book-table th, .book-table td { padding: 14px 16px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; line-height: 1.55; overflow-wrap: anywhere; white-space: normal; }
+.book-table thead th { background: var(--primary-tint); color: var(--ink); font-weight: 700; }
+.book-table tbody th { width: 64%; color: var(--ink); font-weight: 600; }
+.book-table tbody td { width: 36%; color: var(--ink-soft); }
+@media (max-width: 560px) {
+  .book-table { min-width: 0; table-layout: auto; }
+  .book-table th, .book-table td { padding: 12px; }
+  .book-table tbody th { width: auto; }
+  .book-table tbody td { width: auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
   .reveal { opacity: 1; transform: none; transition: none; }
