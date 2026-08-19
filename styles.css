@@ -701,8 +701,10 @@ a.chapter-nav-btn:hover { transform: translateY(-3px); box-shadow: var(--shadow-
   .chapter-actions { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); }
   .download-panel, .comment-panel { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
   .download-panel { display: flex; flex-direction: column; gap: 8px; }
-  .download-panel p { margin: 0; color: var(--ink-soft); }
-  .download-panel span { color: var(--gold); font-weight: 700; font-size: 0.85rem; }
+.download-panel p { margin: 0; color: var(--ink-soft); }
+.download-panel span { color: var(--gold); font-weight: 700; font-size: 0.85rem; }
+.download-links { display: flex; flex-wrap: wrap; gap: 12px; }
+.download-links .text-link { font-weight: 700; }
   .comment-panel { display: flex; flex-direction: column; gap: 10px; }
   .comment-panel label { font-weight: 700; color: var(--ink); }
   .comment-panel textarea { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); font: inherit; resize: vertical; }
